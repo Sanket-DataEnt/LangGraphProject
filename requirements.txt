@@ -1,0 +1,9 @@
+langchain
+langchain-core
+langchain-community
+faiss-cpu
+langchain_huggingface
+langchain-groq
+langgraph
+langgraph-cli[inmem]
+streamlit

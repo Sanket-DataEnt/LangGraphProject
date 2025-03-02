@@ -184,3 +184,5 @@ config.json
 
 # langgraph debugging files
 *.pckl
+
+*etc/*

@@ -23,6 +23,19 @@ class DisplayResultStreamlit:
                         with st.chat_message("assistant"):
                             st.write(value["messages"].content)
 
+        elif usecase=="Blog Generator Chatbot":
+            initial_state = {"topic": [user_message]}
+            res = graph.invoke(initial_state)
+            for message in res['topic']:
+                if type(message) == HumanMessage:
+                    with st.chat_message("user"):
+                        st.write(message.content)
+                elif type(message)==AIMessage and message.content:
+                    with st.chat_message("assistant"):
+                        st.write(message.content)
+
+
+
         elif usecase=="Chatbot with Tool":
              # Prepare state and invoke the graph
             initial_state = {"messages": [user_message]}

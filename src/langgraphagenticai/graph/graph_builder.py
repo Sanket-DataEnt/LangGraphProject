@@ -2,8 +2,10 @@ from langgraph.graph import StateGraph, START,END, MessagesState
 from langgraph.prebuilt import tools_condition,ToolNode
 from langchain_core.prompts import ChatPromptTemplate
 from src.langgraphagenticai.state.state import State
+from src.langgraphagenticai.state.bloggenerator_state import BlogGeneratorState
 from src.langgraphagenticai.nodes.basic_chatbot_node import BasicChatbotNode
 from src.langgraphagenticai.nodes.chatbot_with_Tool_node import ChatbotWithToolNode
+from src.langgraphagenticai.nodes.bloggenerator_chatbot_node import BlogGeneratorNode
 from src.langgraphagenticai.tools.search_tool import get_tools,create_tool_node
 
 
@@ -14,6 +16,7 @@ class GraphBuilder:
     def __init__(self,model):
         self.llm=model
         self.graph_builder=StateGraph(State)
+        self.blog_graph_builder=StateGraph(BlogGeneratorState)
 
     def basic_chatbot_build_graph(self):
         """
@@ -57,7 +60,27 @@ class GraphBuilder:
         self.graph_builder.add_conditional_edges("chatbot", tools_condition)
         self.graph_builder.add_edge("tools","chatbot")
 
-    
+    def blog_generator_build_graph(self):
+
+        ## Define LLM
+        llm = self.llm
+
+        # Define Blog Generator Node
+        self.obj_blog_generator_node = BlogGeneratorNode(llm)
+
+        # Add nodes
+        self.blog_graph_builder.add_node("chatbot", self.obj_blog_generator_node.process)
+        self.blog_graph_builder.add_node("titleagent", self.obj_blog_generator_node.titleagent)
+        self.blog_graph_builder.add_node("blogagent", self.obj_blog_generator_node.blogagent)
+        self.blog_graph_builder.add_node("finalblogagent", self.obj_blog_generator_node.finalblogagent)
+
+        # add edges
+        self.blog_graph_builder.add_edge(START, "chatbot")
+        self.blog_graph_builder.add_edge("chatbot", "titleagent")
+        self.blog_graph_builder.add_edge("chatbot", "blogagent")
+        self.blog_graph_builder.add_edge("titleagent", "finalblogagent")
+        self.blog_graph_builder.add_edge("blogagent", "finalblogagent")
+        self.blog_graph_builder.add_edge("finalblogagent", END)
     
     
     def setup_graph(self, usecase: str):
@@ -66,8 +89,13 @@ class GraphBuilder:
         """
         if usecase == "Basic Chatbot":
             self.basic_chatbot_build_graph()
+            return self.graph_builder.compile()
 
         if usecase == "Chatbot with Tool":
             self.chatbot_with_tools_build_graph()
-        return self.graph_builder.compile()
+            return self.graph_builder.compile()
+        
+        if usecase == "Blog Generator Chatbot":
+            self.blog_generator_build_graph()
+            return self.blog_graph_builder.compile()
     
